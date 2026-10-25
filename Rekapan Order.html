@@ -1,0 +1,1749 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rekapan Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: header sapaan + ringkasan, toolbar (cari, filter, export), grid kartu order, form tambah/edit di modal */
+:root{
+  --bg:#F4F6FF;
+  --accent:#9CA3E8;
+  --accent-strong:#7E86DB;
+  --ink:#38355C;
+  --hi:#C9CCF8;
+  --muted:#6C6990;
+  --glass:rgba(255,255,255,.66);
+  --glass-line:rgba(255,255,255,.92);
+  --shadow:0 12px 32px rgba(156,163,232,.30);
+  --ok-bg:#D5F4E4; --ok-ink:#17694A; --ok-bar:#7ED9AE;
+  --warn-bg:#FFEBC8; --warn-ink:#80520A; --warn-bar:#FFC46B;
+  --bad-bg:#FFD9E5; --bad-ink:#9B2147; --bad-bar:#FF8DB0;
+  --profit:#17794F;
+  --r:24px;
+  --font-display:'Fredoka','Baloo 2','Trebuchet MS',system-ui,sans-serif;
+  --font-body:'Nunito','Segoe UI',system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.5;
+  color:var(--ink);
+  background:
+    radial-gradient(620px 420px at 6% -4%, #E1E4FF, transparent 70%),
+    radial-gradient(520px 380px at 100% 8%, #FBE2F2, transparent 70%),
+    radial-gradient(540px 440px at 82% 100%, #DCEBFF, transparent 70%),
+    var(--bg);
+  background-attachment:fixed;
+  min-height:100vh;
+  padding-block:max(20px, env(safe-area-inset-top,0px)) max(96px, env(safe-area-inset-bottom,0px));
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--accent-strong);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.ico{width:1.15em;height:1.15em;flex:none;vertical-align:-.2em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ico.fill{fill:currentColor;stroke:none}
+
+/* glass */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--glass-line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow);
+  -webkit-backdrop-filter:blur(14px);
+  backdrop-filter:blur(14px);
+}
+
+/* header + profil toko (bingkai banner, kilau bintang, aksen petir) */
+:root{--electro:#B9A6FF}
+.hero{position:relative;padding:14px;overflow:hidden;display:grid;gap:16px}
+.store{display:grid}
+.banner-img{
+  position:relative;height:clamp(130px,26vw,210px);border-radius:20px;overflow:hidden;isolation:isolate;
+  background-color:#AEB4F0;background-size:cover;background-position:center;
+  background-image:
+    radial-gradient(circle at 16% 32%, rgba(255,255,255,.8) 0 2px, transparent 3px),
+    radial-gradient(circle at 58% 72%, rgba(255,255,255,.65) 0 2px, transparent 3px),
+    radial-gradient(circle at 86% 26%, rgba(255,255,255,.85) 0 2.5px, transparent 4px),
+    radial-gradient(circle at 36% 18%, rgba(255,255,255,.6) 0 1.5px, transparent 3px),
+    linear-gradient(120deg,#9CA3E8 0%,#B9A6FF 48%,#F2C6E6 100%)
+}
+.banner-img::before{content:"";position:absolute;inset:8px;border:2px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:inset 0 0 0 1px rgba(56,53,92,.2),0 0 0 1px rgba(56,53,92,.2);pointer-events:none;z-index:2}
+.corner{position:absolute;width:36px;height:36px;color:#fff;z-index:3;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(56,53,92,.55));fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.corner.c1{top:5px;left:5px}
+.corner.c2{top:5px;right:5px;transform:rotate(90deg)}
+.corner.c3{bottom:5px;right:5px;transform:rotate(180deg)}
+.corner.c4{bottom:5px;left:5px;transform:rotate(270deg)}
+.bolt{position:absolute;z-index:1;color:#fff;opacity:.3;pointer-events:none;fill:currentColor}
+.bolt.b1{width:120px;height:120px;right:9%;top:-14px;transform:rotate(14deg)}
+.bolt.b2{width:64px;height:64px;left:22%;bottom:-8px;transform:rotate(-12deg);opacity:.22}
+.sp{position:absolute;z-index:3;color:#fff;pointer-events:none;fill:currentColor;filter:drop-shadow(0 0 6px rgba(255,255,255,.95));animation:tw 3.2s ease-in-out infinite}
+.sp.p1{width:26px;height:26px;left:14%;top:22%}
+.sp.p2{width:16px;height:16px;left:46%;top:58%;animation-delay:.8s}
+.sp.p3{width:22px;height:22px;right:20%;top:30%;animation-delay:1.5s}
+.sp.p4{width:12px;height:12px;right:8%;bottom:26%;animation-delay:2.1s}
+@keyframes tw{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+.cam{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.9);color:var(--ink);font-weight:800;font-size:.78rem;cursor:pointer;border:2px solid var(--ink);box-shadow:0 2px 0 var(--ink)}
+.cam:hover{background:#fff}
+.cam:focus-within{outline:3px solid var(--accent-strong);outline-offset:2px}
+.cam input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.banner-cam{right:20px;bottom:20px}
+.store-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;padding:0 10px;margin-top:-44px;position:relative;z-index:5}
+.store-row{pointer-events:none}
+.store-row>*{pointer-events:auto}
+.avatar-wrap{position:relative;flex:none}
+.store-avatar{width:96px;height:96px;border-radius:30px;border:4px solid #fff;background:var(--hi) center/cover no-repeat;box-shadow:0 8px 20px rgba(156,163,232,.55),0 0 0 2px var(--accent);display:grid;place-items:center;font-family:var(--font-display);font-weight:600;font-size:2.1rem;color:var(--ink)}
+.avatar-cam{right:-8px;bottom:-6px;padding:6px}
+.store-info{flex:1 1 220px;min-width:0}
+.store-info h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:clamp(1.2rem,3.6vw,1.6rem);line-height:1.2;display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
+.store-info h2 .ico{color:var(--accent-strong)}
+.store-info p{margin:2px 0 0;color:var(--muted);font-weight:600;white-space:pre-line;overflow-wrap:anywhere}
+.store-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn-wa{background:#BDEFD2;border-color:var(--ink)}
+.btn-wa:hover{background:#A9E8C4;box-shadow:0 4px 0 var(--ink),0 0 0 4px rgba(94,214,160,.28),0 0 30px 8px rgba(94,214,160,.55)}
+.btn-wa:active{box-shadow:0 1px 0 var(--ink),0 0 18px 4px rgba(94,214,160,.5)}
+.greet h1{font-family:var(--font-display);font-weight:600;font-size:clamp(1.35rem,4.2vw,2rem);line-height:1.15;margin:0;text-wrap:balance}
+.greet p{margin:4px 0 0;color:var(--muted);font-weight:600}
+.sec-title{display:flex;align-items:center;gap:12px;color:var(--accent-strong)}
+.sec-title .line{flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--hi),var(--accent))}
+.sec-title .line:last-child{background:linear-gradient(270deg,transparent,var(--hi),var(--accent))}
+.sec-title h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:1.2rem;color:var(--ink);display:flex;align-items:center;gap:8px}
+textarea.in{height:auto;padding:12px 14px;min-height:92px;resize:vertical;line-height:1.45}
+.mini-actions{display:flex;flex-wrap:wrap;gap:8px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stat{background:rgba(255,255,255,.7);border:1px solid var(--glass-line);border-radius:20px;padding:12px 14px;min-width:0}
+.stat .lbl{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:800;color:var(--muted);letter-spacing:.03em;text-transform:uppercase}
+.stat .val{font-family:var(--font-display);font-weight:600;font-size:clamp(1.05rem,2.6vw,1.45rem);margin-top:2px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.stat.money .val{color:var(--ink)}
+.stat.profit .val{color:var(--profit)}
+
+/* toolbar */
+.toolbar{padding:14px;display:grid;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.search{position:relative;flex:1 1 260px;min-width:0}
+.search .ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--accent-strong)}
+.search input{width:100%;height:46px;border-radius:999px;border:2px solid var(--hi);background:#fff;padding:0 16px 0 42px;outline:none}
+.search input:focus{border-color:var(--accent-strong)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 20px;border-radius:999px;border:2px solid var(--ink);
+  background:var(--accent);color:var(--ink);font-weight:800;
+  box-shadow:0 4px 0 var(--ink);transition:transform .08s, box-shadow .08s;text-decoration:none;white-space:nowrap
+}
+.btn:hover{background:#A9AFEE}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn{position:relative;overflow:hidden}
+.btn:not(.ghost)::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.7) 50%,transparent 68%);transform:translateX(-130%);pointer-events:none}
+.btn:not(.ghost):hover::after{transform:translateX(130%);transition:transform .75s ease}
+.btn.ghost{background:#fff}
+.btn.ghost:hover{background:var(--hi)}
+.btn.small{height:36px;padding:0 14px;font-size:.88rem;box-shadow:0 3px 0 var(--ink)}
+.btn[disabled]{opacity:.6;cursor:progress}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--hi);background:#fff;border-radius:999px;padding:6px 14px;font-weight:800;font-size:.88rem;display:inline-flex;gap:8px;align-items:center}
+.chip .n{background:var(--hi);border-radius:999px;padding:0 8px;font-size:.78rem;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip[aria-pressed="true"] .n{background:rgba(255,255,255,.22);color:#fff}
+.sel{height:40px;border-radius:999px;border:2px solid var(--hi);background:#fff;padding:0 12px;font-weight:700}
+.sel-wrap{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.88rem;color:var(--muted)}
+.check{display:inline-flex;align-items:center;gap:8px;font-size:.86rem;font-weight:700;color:var(--muted)}
+.check input{width:18px;height:18px;accent-color:var(--accent-strong)}
+.spacer{flex:1 1 0}
+
+.banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:18px;background:var(--hi);font-weight:700;font-size:.9rem}
+
+/* grid kartu */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
+.card{padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card-head{display:flex;gap:12px;align-items:center;min-width:0}
+.avatar{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;font-family:var(--font-display);font-weight:600;font-size:1.05rem;flex:none;border:2px solid var(--ink)}
+.card-title{min-width:0;flex:1}
+.card-title h3{margin:0;font-family:var(--font-display);font-weight:600;font-size:1.08rem;line-height:1.2;overflow-wrap:anywhere}
+.pill{display:inline-block;margin-top:3px;padding:1px 10px;border-radius:999px;background:var(--hi);font-size:.74rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-size:.78rem;font-weight:800;white-space:nowrap;border:2px solid transparent}
+.badge.ok{background:var(--ok-bg);color:var(--ok-ink);border-color:#B6E8CF}
+.badge.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:#FFD99A}
+.badge.exp{background:var(--bad-bg);color:var(--bad-ink);border-color:#FFB9CF}
+.meta{display:grid;gap:4px;font-size:.9rem}
+.meta div{display:flex;gap:8px;align-items:center;min-width:0}
+.meta .ico{color:var(--accent-strong)}
+.meta span{min-width:0;overflow-wrap:anywhere}
+.meta b{font-weight:800}
+.bar{height:12px;border-radius:999px;background:#E8EAFB;overflow:hidden;border:1px solid #DADDF7}
+.bar i{display:block;height:100%;border-radius:999px;transition:width .4s}
+.ok .bar i,.bar i.ok{background:var(--ok-bar)}
+.bar i.warn{background:var(--warn-bar)}
+.bar i.exp{background:var(--bad-bar)}
+.bar-lbl{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;font-weight:800;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.money{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.money div{background:rgba(255,255,255,.75);border-radius:16px;padding:8px 10px;min-width:0}
+.money small{display:block;font-size:.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.money b{display:block;font-size:.92rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.money .gain b{color:var(--profit)}
+.money .loss b{color:var(--bad-ink)}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:#fff;border:2px solid var(--hi);font-size:.82rem;font-weight:800;text-decoration:none;max-width:100%}
+a.tag:hover{background:var(--hi)}
+a.tag.wa{border-color:#BFEBD3;background:#EFFBF4;color:var(--ok-ink)}
+.tag.pending{background:var(--warn-bg);border-color:#FFD99A;color:var(--warn-ink)}
+.tag.sentok{background:var(--ok-bg);border-color:#B6E8CF;color:var(--ok-ink)}
+.acct{display:grid;gap:6px;font-size:.86rem}
+.acct div{display:flex;align-items:center;gap:8px;min-width:0;background:rgba(255,255,255,.7);border-radius:14px;padding:5px 6px 5px 12px}
+.acct code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84rem;min-width:0;flex:1;overflow-wrap:anywhere}
+.icon-btn{width:32px;height:32px;border-radius:12px;border:0;background:transparent;display:grid;place-items:center;flex:none;color:var(--accent-strong)}
+.icon-btn:hover{background:var(--hi);color:var(--ink)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumb{width:54px;height:54px;border-radius:14px;overflow:hidden;border:2px solid var(--hi);padding:0;background:#fff}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:4px}
+.card-actions .btn{flex:1 1 auto}
+.btn.danger-confirm{background:var(--bad-bg);border-color:var(--bad-ink);color:var(--bad-ink);box-shadow:0 3px 0 var(--bad-ink)}
+
+.empty{padding:36px 20px;text-align:center;display:grid;justify-items:center;gap:8px}
+.empty .big{width:54px;height:54px;color:var(--accent)}
+.empty h3{font-family:var(--font-display);margin:0;font-size:1.25rem}
+.empty p{margin:0;color:var(--muted);max-width:42ch}
+
+/* FAB mobile */
+.fab{position:fixed;right:max(16px, env(safe-area-inset-right,0px));bottom:max(18px, env(safe-area-inset-bottom,0px));z-index:20;display:none;height:56px;padding:0 22px}
+
+/* modal */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(56,53,92,.38);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:max(16px, env(safe-area-inset-top,0px)) max(12px, env(safe-area-inset-right,0px)) max(16px, env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px));overflow-y:auto}
+.overlay[hidden]{display:none}
+.modal{width:100%;max-width:780px;margin:auto;background:rgba(246,247,255,.94);border-radius:28px;border:1px solid var(--glass-line);box-shadow:0 24px 60px rgba(56,53,92,.35);padding:20px;display:grid;gap:16px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.modal-head h2{font-family:var(--font-display);font-weight:600;font-size:1.4rem;margin:0;display:flex;align-items:center;gap:8px}
+.sec{background:#fff;border-radius:22px;padding:14px;display:grid;gap:12px;border:1px solid #E4E6FA}
+.sec h4{margin:0;font-family:var(--font-display);font-weight:600;font-size:1rem;display:flex;gap:8px;align-items:center;color:var(--accent-strong)}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:grid;gap:5px;min-width:0;align-content:start}
+.field.full{grid-column:1/-1}
+.field>label,.field>.lab{font-size:.8rem;font-weight:800;color:var(--muted);letter-spacing:.02em}
+.field>label i{color:var(--bad-ink);font-style:normal}
+.in{width:100%;height:46px;border-radius:16px;border:2px solid var(--hi);background:#fff;padding:0 14px;outline:none;min-width:0}
+.in:focus{border-color:var(--accent-strong);box-shadow:0 0 0 4px rgba(156,163,232,.25)}
+.in.invalid{border-color:#E8668F}
+.in-group{display:flex;gap:8px;align-items:stretch}
+.in-group .in{flex:1}
+.prefix{position:relative}
+.prefix>span{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-weight:800;color:var(--muted)}
+.prefix .in{padding-left:42px;font-variant-numeric:tabular-nums}
+.wa-btn{width:46px;border-radius:16px;border:2px solid #BFEBD3;background:#EFFBF4;color:var(--ok-ink);display:grid;place-items:center;text-decoration:none;flex:none}
+.wa-btn:hover{background:#D9F6E7}
+.wa-btn.disabled{opacity:.45;pointer-events:none}
+.seg{display:flex;gap:8px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{flex:1;text-align:center;padding:11px 12px;border-radius:16px;border:2px solid var(--hi);background:#fff;font-weight:800;cursor:pointer}
+.seg input:checked+label{background:var(--accent);border-color:var(--ink);box-shadow:0 3px 0 var(--ink)}
+.seg input:focus-visible+label{outline:3px solid var(--accent-strong);outline-offset:2px}
+.profit-box{height:46px;border-radius:16px;background:var(--ok-bg);color:var(--ok-ink);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;font-weight:800;font-variant-numeric:tabular-nums}
+.profit-box.loss{background:var(--bad-bg);color:var(--bad-ink)}
+.profit-box small{font-weight:800;opacity:.8}
+.hint{font-size:.8rem;color:var(--muted);font-weight:600}
+.due-box{border-radius:16px;background:var(--hi);padding:10px 14px;font-weight:800;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.drop{border:2px dashed var(--accent);border-radius:18px;padding:16px;text-align:center;background:#FAFAFF;display:grid;gap:6px;justify-items:center;cursor:pointer}
+.drop.over{background:var(--hi)}
+.drop .ico{width:30px;height:30px;color:var(--accent-strong)}
+.previews{display:flex;flex-wrap:wrap;gap:10px}
+.pv{position:relative;width:84px;height:84px;border-radius:16px;overflow:hidden;border:2px solid var(--hi)}
+.pv img{width:100%;height:100%;object-fit:cover;display:block}
+.pv button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(56,53,92,.8);color:#fff;display:grid;place-items:center;padding:0}
+.pv em{position:absolute;left:0;right:0;bottom:0;font-style:normal;font-size:.62rem;font-weight:800;text-align:center;background:rgba(255,255,255,.85);color:var(--ink)}
+.drive{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:.85rem;font-weight:700}
+.drive .dot{width:10px;height:10px;border-radius:50%;background:#C8C6DB;display:inline-block;margin-right:6px}
+.drive .dot.on{background:#3DBD87}
+.modal-foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+.err{color:var(--bad-ink);font-weight:800;font-size:.85rem;min-height:1.2em}
+#proofWrap{display:grid;gap:12px}
+#proofWrap[hidden]{display:none}
+
+/* lightbox */
+.lightbox img{max-width:min(92vw,900px);max-height:78vh;border-radius:20px;display:block;background:#fff}
+.lightbox{display:grid;gap:10px;justify-items:center;margin:auto}
+.lightbox .cap{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;color:#fff;font-weight:700}
+
+.toast{position:fixed;left:50%;bottom:max(24px, env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-weight:700;z-index:80;transition:.25s;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){
+  .fields{grid-template-columns:1fr}
+  .fab{display:inline-flex}
+  .btn.add-top{display:none}
+  .modal{padding:14px;border-radius:24px}
+  .hero{padding:10px}
+  .store-row{margin-top:-38px;padding:0 4px}
+  .store-avatar{width:84px;height:84px;border-radius:26px}
+  .store-actions{width:100%}
+  .store-actions .btn{flex:1 1 auto}
+  .banner-cam span.t{display:none}
+  .banner-cam{padding:6px 8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero glass">
+    <section class="store" aria-label="Profil toko">
+      <div class="banner-img" id="storeBanner">
+        <svg class="corner c1" viewBox="0 0 36 36" aria-hidden="true"><path d="M4 22V9a5 5 0 0 1 5-5h13"/><path d="M10 17v-4a3 3 0 0 1 3-3h4"/><path d="M4 4l6 6"/></svg>
+        <svg class="corner c2" viewBox="0 0 36 36" aria-hidden="true"><path d="M4 22V9a5 5 0 0 1 5-5h13"/><path d="M10 17v-4a3 3 0 0 1 3-3h4"/><path d="M4 4l6 6"/></svg>
+        <svg class="corner c3" viewBox="0 0 36 36" aria-hidden="true"><path d="M4 22V9a5 5 0 0 1 5-5h13"/><path d="M10 17v-4a3 3 0 0 1 3-3h4"/><path d="M4 4l6 6"/></svg>
+        <svg class="corner c4" viewBox="0 0 36 36" aria-hidden="true"><path d="M4 22V9a5 5 0 0 1 5-5h13"/><path d="M10 17v-4a3 3 0 0 1 3-3h4"/><path d="M4 4l6 6"/></svg>
+        <svg class="bolt b1" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <svg class="bolt b2" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <svg class="sp p1" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c.6 5.4 4.6 9.4 10 10-5.4.6-9.4 4.6-10 10-.6-5.4-4.6-9.4-10-10 5.4-.6 9.4-4.6 10-10Z"/></svg>
+        <svg class="sp p2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c.6 5.4 4.6 9.4 10 10-5.4.6-9.4 4.6-10 10-.6-5.4-4.6-9.4-10-10 5.4-.6 9.4-4.6 10-10Z"/></svg>
+        <svg class="sp p3" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c.6 5.4 4.6 9.4 10 10-5.4.6-9.4 4.6-10 10-.6-5.4-4.6-9.4-10-10 5.4-.6 9.4-4.6 10-10Z"/></svg>
+        <svg class="sp p4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c.6 5.4 4.6 9.4 10 10-5.4.6-9.4 4.6-10 10-.6-5.4-4.6-9.4-10-10 5.4-.6 9.4-4.6 10-10Z"/></svg>
+        <label class="cam banner-cam"><input type="file" id="bannerFile" accept="image/*"><span data-icon="camera"></span><span class="t">Ganti banner</span></label>
+      </div>
+      <div class="store-row">
+        <div class="avatar-wrap">
+          <div class="store-avatar" id="storeAvatar" role="img" aria-label="Foto profil toko"></div>
+          <label class="cam avatar-cam" aria-label="Ganti foto profil"><input type="file" id="avatarFile" accept="image/*"><span data-icon="camera"></span></label>
+        </div>
+        <div class="store-info">
+          <h2 id="storeName"></h2>
+          <p id="storeBio"></p>
+        </div>
+        <div class="store-actions">
+          <a class="btn btn-wa" id="btnWaStore" href="#" target="_blank" rel="noopener"><span data-icon="wa"></span>Chat WhatsApp Toko</a>
+          <button class="btn ghost small" id="btnEditStore" type="button"><span data-icon="edit"></span>Edit profil</button>
+        </div>
+      </div>
+    </section>
+    <div class="greet">
+      <h1 id="greeting">Halo, kak!</h1>
+      <p id="today"></p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section class="toolbar glass" aria-label="Pencarian dan filter">
+    <div class="row">
+      <label class="search">
+        <span class="sr">Cari order</span>
+        <span data-icon="search"></span>
+        <input id="q" type="search" placeholder="Cari nama customer, aplikasi, admin, email…" autocomplete="off">
+      </label>
+      <button class="btn add-top" id="btnAdd" type="button"><span data-icon="plus"></span>Tambah Order</button>
+    </div>
+    <div class="row">
+      <div class="chips" id="chips" role="group" aria-label="Filter status"></div>
+      <span class="spacer"></span>
+      <label class="sel-wrap">Urutkan
+        <select class="sel" id="sort">
+          <option value="due">Jatuh tempo terdekat</option>
+          <option value="new">Order terbaru</option>
+          <option value="profit">Untung tertinggi</option>
+        </select>
+      </label>
+      <label class="sel-wrap">Peringatan
+        <select class="sel" id="warnDays">
+          <option value="3">H-3</option>
+          <option value="5">H-5</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <button class="btn ghost small" id="btnExport" type="button"><span data-icon="download"></span>Export ke Excel</button>
+      <label class="check"><input type="checkbox" id="exPass"> Sertakan password di file</label>
+      <span class="hint" id="exportHint"></span>
+    </div>
+    <div class="row">
+      <button class="btn ghost small" id="btnMail" type="button"><span data-icon="mail"></span>Kirim pengingat ke email</button>
+      <button class="btn ghost small" id="btnSettings" type="button"><span data-icon="lock"></span>Pengaturan Drive &amp; Email</button>
+      <span class="hint" id="syncStatus"></span>
+    </div>
+  </section>
+
+  <div id="remindBanner" class="banner" hidden></div>
+
+  <div id="sampleBanner" class="banner" hidden>
+    <span>Data yang tampil sekarang adalah contoh supaya kamu bisa lihat tampilannya.</span>
+    <button class="btn small ghost" id="btnClearSample" type="button">Hapus data contoh</button>
+  </div>
+
+  <div class="sec-title"><span class="line"></span><h2><span data-icon="gem"></span>Daftar Order<span data-icon="gem"></span></h2><span class="line"></span></div>
+
+  <main id="grid" class="grid" aria-live="polite"></main>
+</div>
+
+<button class="btn fab" id="btnFab" type="button" aria-label="Tambah order"><span data-icon="plus"></span>Tambah</button>
+
+<!-- Modal form -->
+<div class="overlay" id="formOverlay" hidden>
+  <form class="modal" id="orderForm" role="dialog" aria-modal="true" aria-labelledby="formTitle" novalidate>
+    <div class="modal-head">
+      <h2 id="formTitle"><span data-icon="sparkles"></span><span id="formTitleText">Tambah Order</span></h2>
+      <button class="icon-btn" type="button" id="btnCloseForm" aria-label="Tutup"><span data-icon="x"></span></button>
+    </div>
+
+    <div class="sec">
+      <h4><span data-icon="bag"></span>Pesanan</h4>
+      <div class="fields">
+        <div class="field">
+          <label for="f-app">Nama Aplikasi <i>*</i></label>
+          <select class="in" id="f-app"></select>
+        </div>
+        <div class="field" id="wrapAppCustom" hidden>
+          <label for="f-appCustom">Nama aplikasi lainnya <i>*</i></label>
+          <input class="in" id="f-appCustom" type="text" placeholder="Contoh: Apple Music">
+        </div>
+        <div class="field">
+          <span class="lab">Jenis Aplikasi <i style="color:var(--bad-ink);font-style:normal">*</i></span>
+          <div class="seg" role="radiogroup" aria-label="Jenis aplikasi">
+            <input type="radio" name="type" id="t-sharing" value="Sharing" checked><label for="t-sharing">Sharing</label>
+            <input type="radio" name="type" id="t-private" value="Private"><label for="t-private">Private</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-dur">Durasi Pembelian <i>*</i></label>
+          <select class="in" id="f-dur"></select>
+        </div>
+        <div class="field" id="wrapCustomDays" hidden>
+          <label for="f-customDays">Jumlah hari (custom) <i>*</i></label>
+          <input class="in" id="f-customDays" type="number" min="1" max="3650" inputmode="numeric" placeholder="Contoh: 45">
+        </div>
+        <div class="field" id="wrapMonthDays" hidden>
+          <label for="f-monthDays">Hari per bulan</label>
+          <input class="in" id="f-monthDays" type="number" min="25" max="31" inputmode="numeric">
+          <span class="hint">Isi 25 sampai 30 sesuai aturan aplikasinya.</span>
+        </div>
+        <div class="field">
+          <label for="f-date">Tanggal Order <i>*</i></label>
+          <input class="in" id="f-date" type="date">
+        </div>
+        <div class="field full">
+          <div class="due-box" id="dueBox"><span data-icon="clock"></span><span id="dueText">Pilih durasi dan tanggal untuk melihat jatuh tempo.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h4><span data-icon="user"></span>Pembeli</h4>
+      <div class="fields">
+        <div class="field">
+          <label for="f-customer">Nama Customer (inisial) <i>*</i></label>
+          <input class="in" id="f-customer" type="text" maxlength="40" placeholder="Contoh: AR">
+        </div>
+        <div class="field">
+          <label for="f-waBuyer">No. WhatsApp Pembeli</label>
+          <div class="in-group">
+            <input class="in" id="f-waBuyer" type="tel" inputmode="tel" placeholder="08123456789">
+            <a class="wa-btn disabled" id="waBuyerLink" href="#" target="_blank" rel="noopener" aria-label="Buka WhatsApp pembeli"><span data-icon="wa"></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h4><span data-icon="cash"></span>Harga</h4>
+      <div class="fields">
+        <div class="field">
+          <label for="f-price">Harga Jual <i>*</i></label>
+          <div class="prefix"><span>Rp</span><input class="in" id="f-price" type="text" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <div class="field">
+          <label for="f-cost">Modal Beli <i>*</i></label>
+          <div class="prefix"><span>Rp</span><input class="in" id="f-cost" type="text" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <div class="field full">
+          <span class="lab">Untung Bersih (otomatis)</span>
+          <div class="profit-box" id="profitBox"><span id="profitVal">Rp 0</span><small id="profitPct"></small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h4><span data-icon="lock"></span>Akun Aplikasi</h4>
+      <div class="fields">
+        <div class="field">
+          <label for="f-email">Email Aplikasi</label>
+          <input class="in" id="f-email" type="email" placeholder="akun@email.com" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="f-pass">Password Aplikasi (opsional)</label>
+          <div class="in-group">
+            <input class="in" id="f-pass" type="password" autocomplete="new-password">
+            <button class="wa-btn" style="border-color:var(--hi);background:#fff;color:var(--accent-strong)" type="button" id="btnTogglePass" aria-label="Tampilkan password"><span data-icon="eye"></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h4><span data-icon="user"></span>Admin FH</h4>
+      <div class="fields">
+        <div class="field">
+          <label for="f-admin">Nama Admin FH</label>
+          <input class="in" id="f-admin" type="text" maxlength="40">
+        </div>
+        <div class="field">
+          <label for="f-waAdmin">No. WhatsApp Admin FH</label>
+          <div class="in-group">
+            <input class="in" id="f-waAdmin" type="tel" inputmode="tel" placeholder="08123456789">
+            <a class="wa-btn disabled" id="waAdminLink" href="#" target="_blank" rel="noopener" aria-label="Buka WhatsApp admin"><span data-icon="wa"></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h4><span data-icon="image"></span>Bukti (SS Proof)</h4>
+      <div class="field">
+        <span class="lab">Status pengiriman bukti</span>
+        <div class="seg" role="radiogroup" aria-label="Status pengiriman bukti">
+          <input type="radio" name="proofStatus" id="ps-not" value="not" checked><label for="ps-not">Belum kirim</label>
+          <input type="radio" name="proofStatus" id="ps-sent" value="sent"><label for="ps-sent">Sudah kirim</label>
+        </div>
+      </div>
+      <div id="proofWrap" hidden>
+      <label class="drop" id="drop" for="f-files">
+        <span data-icon="upload"></span>
+        <b>Pilih atau seret foto ke sini</b>
+        <span class="hint">Maksimal 4 foto. Foto dikecilkan otomatis sebelum disimpan.</span>
+      </label>
+      <input class="sr" id="f-files" type="file" accept="image/*" multiple>
+      <div class="previews" id="previews"></div>
+      <div class="drive">
+        <span><i class="dot" id="driveDot"></i><span id="driveText">Google Drive belum terhubung. Foto disimpan di browser ini.</span></span>
+        <button class="btn small ghost" type="button" id="btnDrive"><span data-icon="upload"></span>Hubungkan Google Drive</button>
+      </div>
+      </div>
+    </div>
+
+    <div class="err" id="formErr" role="alert"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" type="button" id="btnCancel">Batal</button>
+      <button class="btn" type="submit" id="btnSave"><span data-icon="check"></span><span id="btnSaveText">Simpan Order</span></button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal profil toko -->
+<div class="overlay" id="storeOverlay" hidden>
+  <form class="modal" id="storeForm" role="dialog" aria-modal="true" aria-labelledby="storeFormTitle" novalidate>
+    <div class="modal-head">
+      <h2 id="storeFormTitle"><span data-icon="gem"></span>Edit Profil Toko</h2>
+      <button class="icon-btn" type="button" id="btnCloseStore" aria-label="Tutup"><span data-icon="x"></span></button>
+    </div>
+    <div class="sec">
+      <div class="fields">
+        <div class="field full">
+          <label for="st-name">Nama Toko <i>*</i></label>
+          <input class="in" id="st-name" type="text" maxlength="40" placeholder="Nama tokomu">
+        </div>
+        <div class="field full">
+          <label for="st-bio">Bio Toko</label>
+          <textarea class="in" id="st-bio" maxlength="160" placeholder="Ceritakan tokomu dalam satu dua kalimat"></textarea>
+        </div>
+        <div class="field full">
+          <label for="st-wa">No. WhatsApp Toko</label>
+          <div class="in-group">
+            <input class="in" id="st-wa" type="tel" inputmode="tel" placeholder="08123456789">
+            <a class="wa-btn disabled" id="stWaLink" href="#" target="_blank" rel="noopener" aria-label="Coba buka WhatsApp toko"><span data-icon="wa"></span></a>
+          </div>
+        </div>
+        <div class="field full">
+          <span class="lab">Gambar</span>
+          <div class="mini-actions">
+            <button class="btn small ghost" type="button" data-reset="banner">Kembalikan banner awal</button>
+            <button class="btn small ghost" type="button" data-reset="avatar">Hapus foto profil</button>
+          </div>
+          <span class="hint">Untuk mengganti banner atau foto, pakai tombol kamera di profil.</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" type="button" id="btnStoreCancel">Batal</button>
+      <button class="btn" type="submit"><span data-icon="check"></span>Simpan Profil</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal pengaturan -->
+<div class="overlay" id="setOverlay" hidden>
+  <form class="modal" id="setForm" role="dialog" aria-modal="true" aria-labelledby="setTitle" novalidate>
+    <div class="modal-head">
+      <h2 id="setTitle"><span data-icon="sparkles"></span>Pengaturan Drive &amp; Email</h2>
+      <button class="icon-btn" type="button" id="btnCloseSet" aria-label="Tutup"><span data-icon="x"></span></button>
+    </div>
+    <div class="sec">
+      <h4><span data-icon="mail"></span>Email pengingat</h4>
+      <div class="fields">
+        <div class="field full">
+          <label for="s-email">Email kamu (tujuan rekap pengingat)</label>
+          <input class="in" id="s-email" type="email" placeholder="kamu@gmail.com" autocomplete="email">
+          <span class="hint">Tombol "Kirim pengingat ke email" membuka Gmail dengan draf rekap customer yang mau habis atau expired, lengkap dengan link chat WhatsApp tiap customer.</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec">
+      <h4><span data-icon="upload"></span>Google Drive</h4>
+      <div class="fields">
+        <div class="field full">
+          <label for="s-folder">Link folder Google Drive tujuan bukti</label>
+          <input class="in" id="s-folder" type="url" placeholder="https://drive.google.com/drive/folders/...">
+          <span class="hint" id="folderHint"></span>
+        </div>
+        <div class="field full">
+          <label for="s-client">Google OAuth Client ID</label>
+          <input class="in" id="s-client" type="text" placeholder="1234567890-abc.apps.googleusercontent.com" autocomplete="off">
+          <span class="hint">Dibuat sekali di Google Cloud Console: APIs &amp; Services &gt; Credentials &gt; Create credentials &gt; OAuth client ID &gt; Web application. Aktifkan Google Drive API, lalu tambahkan alamat tempat dashboard ini dibuka di Authorized JavaScript origins.</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec">
+      <h4><span data-icon="bell"></span>Google Sheets (pengingat otomatis tiap pagi)</h4>
+      <div class="fields">
+        <div class="field full">
+          <label for="s-sheet">Alamat Web App (berakhiran /exec)</label>
+          <input class="in" id="s-sheet" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+        </div>
+        <div class="field full">
+          <label for="s-secret">Kata sandi (harus sama dengan SECRET di skrip)</label>
+          <input class="in" id="s-secret" type="password" autocomplete="off">
+          <span class="hint">Password akun aplikasi tidak ikut dikirim ke Sheet. Order contoh juga tidak dikirim.</span>
+        </div>
+        <div class="field full">
+          <div class="mini-actions">
+            <button class="btn small ghost" type="button" id="btnPush">Kirim ke Sheet sekarang</button>
+            <button class="btn small ghost" type="button" id="btnPull">Ambil dari Sheet</button>
+          </div>
+          <span class="hint" id="syncStatus2">Setelah tersambung, setiap order yang kamu simpan otomatis ikut terkirim ke Sheet.</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" type="button" id="btnSetCancel">Batal</button>
+      <button class="btn" type="submit"><span data-icon="check"></span>Simpan Pengaturan</button>
+    </div>
+  </form>
+</div>
+
+<!-- Lightbox -->
+<div class="overlay" id="lbOverlay" hidden>
+  <div class="lightbox">
+    <img id="lbImg" alt="Bukti pembayaran">
+    <div class="cap"><span id="lbName"></span><a class="btn small ghost" id="lbLink" href="#" target="_blank" rel="noopener" hidden>Buka di Google Drive</a><button class="btn small ghost" id="lbClose" type="button">Tutup</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ============================================================
+   PENGATURAN — ubah bagian ini sesuai kebutuhan
+   ============================================================ */
+const CONFIG = {
+  // Isi dengan OAuth Client ID (tipe "Web application") dari Google Cloud Console
+  // agar upload bukti langsung masuk ke Google Drive. Kosong = foto disimpan lokal di browser.
+  GOOGLE_CLIENT_ID: '',
+  // Opsional: ID folder tujuan di Google Drive
+  DRIVE_FOLDER_ID: '',
+  DRIVE_SCOPE: 'https://www.googleapis.com/auth/drive.file',
+  STORAGE_KEY: 'rekap-order-v1',
+  MAX_PROOFS: 4,
+  // Daftar aplikasi dan jumlah hari untuk 1 bulan (25 sampai 30 tergantung aplikasi)
+  APPS: [
+    { name: 'Netflix', monthDays: 30 },
+    { name: 'Spotify', monthDays: 30 },
+    { name: 'YouTube Premium', monthDays: 30 },
+    { name: 'Disney+ Hotstar', monthDays: 30 },
+    { name: 'Vidio', monthDays: 30 },
+    { name: 'Prime Video', monthDays: 30 },
+    { name: 'Viu', monthDays: 30 },
+    { name: 'WeTV', monthDays: 30 },
+    { name: 'iQIYI', monthDays: 30 },
+    { name: 'Canva Pro', monthDays: 30 },
+    { name: 'CapCut Pro', monthDays: 30 },
+    { name: 'ChatGPT', monthDays: 30 }
+  ]
+};
+const OTHER = '__other__';
+
+/* ============================================================
+   IKON (gaya Lucide, di-inline supaya tidak butuh library)
+   ============================================================ */
+const ICONS = {
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  edit:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  wa:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9 10c.5 2 2 3.5 4 4l1.2-1.2 2 1c-.4 1.3-1.5 1.9-2.7 1.7C10.6 15 8.5 12.900 8 10.700 7.800 9.500 8.400 8.500 9.600 8l1 2Z"/>',
+  eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff:'<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>',
+  copy:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  calendar:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+  image:'<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  upload:'<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  cash:'<rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+  bag:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+  trend:'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  link:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  sparkles:'<path d="M12 3c.5 4.600 3.400 7.500 8 8-4.600.5-7.500 3.400-8 8-.5-4.600-3.400-7.500-8-8 4.600-.5 7.500-3.400 8-8Z"/>',
+  receipt:'<path d="M4 2v20l3-2 2 2 3-2 3 2 2-2 3 2V2l-3 2-2-2-3 2-3-2-2 2Z"/><path d="M8 8h8"/><path d="M8 12h8"/>',
+  gem:'<path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/><path d="m12 21-4-12 4-6 4 6z"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>'
+};
+function icon(name, cls) {
+  return '<svg class="ico' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>';
+}
+function hydrateIcons(root) {
+  (root || document).querySelectorAll('[data-icon]').forEach(el => {
+    el.outerHTML = icon(el.getAttribute('data-icon'));
+  });
+}
+
+/* ============================================================
+   UTILITAS
+   ============================================================ */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const nf = new Intl.NumberFormat('id-ID');
+const rp = n => (n < 0 ? '-Rp ' : 'Rp ') + nf.format(Math.abs(Math.round(n)));
+const num = v => parseInt(String(v == null ? '' : v).replace(/\D/g, ''), 10) || 0;
+const DAY = 86400000;
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function toISO(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function parseISO(s) { const p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function startOfToday() { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function addDays(d, n) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; }
+function diffDays(a, b) { return Math.round((a - b) / DAY); }
+const fmtDate = d => d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+function waNum(raw) {
+  let d = String(raw || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.startsWith('0')) d = '62' + d.slice(1);
+  else if (d.startsWith('8')) d = '62' + d;
+  return d.length >= 8 ? d : '';
+}
+const waLink = (raw, text) => {
+  const n = waNum(raw);
+  if (!n) return '';
+  return 'https://wa.me/' + n + (text ? '?text=' + encodeURIComponent(text) : '');
+};
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function copyText(text) {
+  const done = () => toast('Tersalin ke clipboard');
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { toast('Gagal menyalin'); }
+    ta.remove();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, fallback);
+  } else fallback();
+}
+
+/* ============================================================
+   DURASI & TENGGAT
+   ============================================================ */
+const DURATIONS = (() => {
+  const list = [];
+  for (let d = 1; d <= 5; d++) list.push({ key: 'd' + d, label: 'Harian (' + d + ' hari)', days: d });
+  list.push({ key: 'w1', label: 'Mingguan (7 hari)', days: 7 });
+  for (let m = 1; m <= 11; m++) list.push({ key: 'm' + m, label: m === 1 ? 'Bulanan (25-30 hari)' : 'Bulanan: ' + m + ' bulan', months: m });
+  list.push({ key: 'y1', label: '1 Tahun (365 hari)', days: 365 });
+  list.push({ key: 'custom', label: 'Custom (isi jumlah hari)' });
+  return list;
+})();
+const durByKey = k => DURATIONS.find(d => d.key === k);
+function appMonthDays(name) {
+  const a = CONFIG.APPS.find(x => x.name === name);
+  return a ? a.monthDays : 30;
+}
+/* Total hari dari pilihan durasi:
+   Harian=1, Mingguan=7, Bulanan = bulan x hari-per-bulan (25-30), Tahunan=365, Custom=X */
+function calcDays(durKey, customDays, monthDays) {
+  const d = durByKey(durKey);
+  if (!d) return 0;
+  if (d.key === 'custom') return Math.max(0, parseInt(customDays, 10) || 0);
+  if (d.months) return d.months * (parseInt(monthDays, 10) || 30);
+  return d.days;
+}
+function durLabel(o) {
+  const d = durByKey(o.durKey);
+  if (!d) return o.days + ' hari';
+  if (d.key === 'custom') return o.days + ' hari (custom)';
+  if (d.months) return d.months + ' bulan (' + o.days + ' hari)';
+  return d.label;
+}
+
+const settings = { warnDays: 3, filter: 'all', sort: 'due', q: '' };
+
+function statusOf(o) {
+  const today = startOfToday();
+  const start = parseISO(o.orderDate);
+  const due = addDays(start, o.days);
+  const left = diffDays(due, today);
+  const elapsed = diffDays(today, start);
+  const pct = o.days > 0 ? Math.max(0, Math.min(100, Math.round(elapsed / o.days * 100))) : 100;
+  let key = 'ok';
+  if (left < 0) key = 'exp';
+  else if (left <= settings.warnDays) key = 'warn';
+  let badge, sub;
+  if (key === 'exp') { badge = 'Expired'; sub = 'Lewat ' + (-left) + ' hari'; }
+  else if (left === 0) { badge = 'Habis hari ini'; sub = 'Habis hari ini'; }
+  else if (key === 'warn') { badge = 'Mau habis · H-' + left; sub = 'Sisa ' + left + ' hari'; }
+  else { badge = 'Aktif'; sub = 'Sisa ' + left + ' hari'; }
+  return { due, left, pct: key === 'exp' ? 100 : pct, key, badge, sub };
+}
+const profitOf = o => (o.price || 0) - (o.cost || 0);
+
+/* ============================================================
+   DATA & PENYIMPANAN
+   ============================================================ */
+let orders = [];
+const prefs = {
+  remindEmail: '', clientId: '', folderLink: '', sheetUrl: '', sheetSecret: '',
+  store: { name: 'Toko Rekapan Order', bio: 'Akun premium aman, cepat, dan terpercaya.', wa: '', banner: '', avatar: '' }
+};
+function folderIdFrom(s) {
+  const t = String(s || '').trim();
+  const m = t.match(/\/folders\/([A-Za-z0-9_-]+)/) || t.match(/[?&]id=([A-Za-z0-9_-]+)/);
+  if (m) return m[1];
+  return /^[A-Za-z0-9_-]{15,}$/.test(t) ? t : '';
+}
+function applyPrefs() {
+  if (prefs.clientId) CONFIG.GOOGLE_CLIENT_ID = prefs.clientId.trim();
+  const fid = folderIdFrom(prefs.folderLink);
+  if (fid) CONFIG.DRIVE_FOLDER_ID = fid;
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      orders = data.orders || [];
+      Object.assign(settings, data.settings || {});
+      Object.assign(prefs, data.prefs || {});
+      return;
+    }
+  } catch (e) { /* abaikan, pakai data contoh */ }
+  orders = makeSamples();
+}
+function save() {
+  try {
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({ orders, settings: { warnDays: settings.warnDays }, prefs }));
+    schedulePush();
+    return true;
+  } catch (e) {
+    toast('Penyimpanan browser penuh. Hubungkan Google Drive atau kurangi foto.');
+    return false;
+  }
+}
+function uid() { return 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function makeSamples() {
+  const t = startOfToday();
+  const mk = (app, type, durKey, ago, cust, price, cost, extra) => {
+    const monthDays = 30;
+    const days = calcDays(durKey, extra && extra.customDays, monthDays);
+    return Object.assign({
+      id: uid(), sample: true, app, type, durKey, days, monthDays,
+      customDays: (extra && extra.customDays) || '',
+      orderDate: toISO(addDays(t, -ago)), customer: cust,
+      waBuyer: '081234567890', price, cost,
+      email: 'contoh.' + app.toLowerCase().replace(/[^a-z]/g, '') + '@mail.com', password: 'contoh123',
+      admin: 'Admin Contoh', waAdmin: '081298765432', proofs: [], createdAt: Date.now() - ago * DAY
+    }, {});
+  };
+  return [
+    mk('Netflix', 'Sharing', 'm1', 10, 'AR', 35000, 22000),
+    mk('Spotify', 'Private', 'm3', 88, 'DN', 120000, 85000),
+    mk('Canva Pro', 'Sharing', 'm1', 34, 'SM', 15000, 8000),
+    mk('Disney+ Hotstar', 'Sharing', 'y1', 40, 'RK', 180000, 120000),
+    mk('CapCut Pro', 'Sharing', 'w1', 5, 'LP', 12000, 7000),
+    mk('YouTube Premium', 'Private', 'custom', 2, 'FT', 25000, 15000, { customDays: 45 })
+  ];
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const AV_COLORS = ['#C9CCF8', '#FBD3E9', '#D3E8FF', '#D5F4E4', '#FFE6C2', '#E5D5FA'];
+function avatarOf(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  const ini = name.replace(/[^A-Za-z0-9 ]/g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+  return '<div class="avatar" style="background:' + AV_COLORS[h % AV_COLORS.length] + '">' + esc(ini) + '</div>';
+}
+
+function filtered() {
+  const q = settings.q.trim().toLowerCase();
+  let list = orders.map(o => ({ o, s: statusOf(o) }));
+  if (settings.filter !== 'all') list = list.filter(x => x.s.key === settings.filter);
+  if (q) {
+    list = list.filter(({ o }) => [o.customer, o.app, o.admin, o.email, o.waBuyer, o.type].join(' ').toLowerCase().includes(q));
+  }
+  if (settings.sort === 'due') list.sort((a, b) => a.s.left - b.s.left);
+  else if (settings.sort === 'new') list.sort((a, b) => (b.o.createdAt || 0) - (a.o.createdAt || 0));
+  else list.sort((a, b) => profitOf(b.o) - profitOf(a.o));
+  return list;
+}
+
+function renderStats() {
+  const total = orders.length;
+  const income = orders.reduce((s, o) => s + (o.price || 0), 0);
+  const gain = orders.reduce((s, o) => s + profitOf(o), 0);
+  const attn = orders.filter(o => statusOf(o).key !== 'ok').length;
+  $('#stats').innerHTML =
+    '<div class="stat"><div class="lbl">' + icon('bag') + 'Total Order</div><div class="val">' + nf.format(total) + '</div></div>' +
+    '<div class="stat money"><div class="lbl">' + icon('cash') + 'Total Pendapatan</div><div class="val">' + rp(income) + '</div></div>' +
+    '<div class="stat profit"><div class="lbl">' + icon('trend') + 'Untung Bersih</div><div class="val">' + rp(gain) + '</div></div>' +
+    '<div class="stat"><div class="lbl">' + icon('bell') + 'Perlu Perhatian</div><div class="val">' + nf.format(attn) + '</div></div>';
+}
+
+function renderChips() {
+  const c = { all: orders.length, ok: 0, warn: 0, exp: 0 };
+  orders.forEach(o => { c[statusOf(o).key]++; });
+  const defs = [['all', 'Semua'], ['ok', 'Aktif'], ['warn', 'Mau habis'], ['exp', 'Expired']];
+  $('#chips').innerHTML = defs.map(([k, l]) =>
+    '<button type="button" class="chip" data-filter="' + k + '" aria-pressed="' + (settings.filter === k) + '">' + l + '<span class="n">' + c[k] + '</span></button>'
+  ).join('');
+}
+
+function proofsHTML(o) {
+  const ps = proofStatusOf(o);
+  if (ps === 'not') return '<div class="links"><span class="tag pending">' + icon('clock') + 'Bukti belum dikirim</span></div>';
+  if (!o.proofs || !o.proofs.length) return '<div class="links"><span class="tag sentok">' + icon('check') + 'Bukti sudah dikirim</span></div>';
+  return '<div class="thumbs" aria-label="Bukti pembayaran">' + o.proofs.map((p, i) =>
+    p.thumb
+      ? '<button type="button" class="thumb" data-act="proof" data-id="' + o.id + '" data-i="' + i + '" aria-label="Lihat bukti ' + (i + 1) + '"><img src="' + esc(p.thumb) + '" alt=""></button>'
+      : (p.url ? '<a class="tag" href="' + esc(p.url) + '" target="_blank" rel="noopener">' + icon('image') + 'Bukti ' + (i + 1) + '</a>' : '')
+  ).join('') + '</div>';
+}
+
+function cardHTML(o, s) {
+  const gain = profitOf(o);
+  const remindMsg = 'Halo kak ' + o.customer + ', ' + o.app + ' (' + o.type + ') kakak ' +
+    (s.key === 'exp' ? 'sudah berakhir sejak ' : 'akan berakhir pada ') + fmtDate(s.due) +
+    '. Mau diperpanjang? Kabari aku ya kak.';
+  const remind = waLink(o.waBuyer, remindMsg);
+  const buyer = waLink(o.waBuyer);
+  const admin = waLink(o.waAdmin);
+  return '<article class="card glass ' + s.key + '" data-id="' + o.id + '">' +
+    '<div class="card-head">' + avatarOf(o.app) +
+      '<div class="card-title"><h3>' + esc(o.app) + '</h3><span class="pill">' + esc(o.type) + '</span></div>' +
+      '<span class="badge ' + s.key + '">' + icon(s.key === 'ok' ? 'check' : 'alert') + esc(s.badge) + '</span>' +
+    '</div>' +
+    '<div class="meta">' +
+      '<div>' + icon('user') + '<span>Customer <b>' + esc(o.customer) + '</b></span></div>' +
+      '<div>' + icon('calendar') + '<span>' + fmtDate(parseISO(o.orderDate)) + ' &rarr; <b>' + fmtDate(s.due) + '</b></span></div>' +
+      '<div>' + icon('clock') + '<span>' + esc(durLabel(o)) + '</span></div>' +
+    '</div>' +
+    '<div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + s.pct + '" aria-label="Masa aktif terpakai"><i class="' + s.key + '" style="width:' + s.pct + '%"></i></div>' +
+      '<div class="bar-lbl"><span>' + esc(s.sub) + '</span><span>' + s.pct + '% terpakai</span></div></div>' +
+    '<div class="money">' +
+      '<div><small>Jual</small><b>' + rp(o.price) + '</b></div>' +
+      '<div><small>Modal</small><b>' + rp(o.cost) + '</b></div>' +
+      '<div class="' + (gain >= 0 ? 'gain' : 'loss') + '"><small>Untung</small><b>' + rp(gain) + '</b></div>' +
+    '</div>' +
+    '<div class="links">' +
+      (buyer ? '<a class="tag wa" href="' + buyer + '" target="_blank" rel="noopener">' + icon('wa') + 'Pembeli ' + esc(o.waBuyer) + '</a>' : '') +
+      (o.admin || admin ? '<' + (admin ? 'a class="tag wa" href="' + admin + '" target="_blank" rel="noopener"' : 'span class="tag"') + '>' + icon('user') + 'Admin FH ' + esc(o.admin || '') + '</' + (admin ? 'a' : 'span') + '>' : '') +
+    '</div>' +
+    ((o.email || o.password) ? '<div class="acct">' +
+      (o.email ? '<div>' + icon('mail') + '<code>' + esc(o.email) + '</code><button class="icon-btn" type="button" data-act="copy-email" data-id="' + o.id + '" aria-label="Salin email">' + icon('copy') + '</button></div>' : '') +
+      (o.password ? '<div>' + icon('lock') + '<code data-pass="' + o.id + '">••••••••</code><button class="icon-btn" type="button" data-act="toggle-pass" data-id="' + o.id + '" aria-label="Tampilkan password">' + icon('eye') + '</button><button class="icon-btn" type="button" data-act="copy-pass" data-id="' + o.id + '" aria-label="Salin password">' + icon('copy') + '</button></div>' : '') +
+    '</div>' : '') +
+    proofsHTML(o) +
+    '<div class="card-actions">' +
+      (remind && s.key !== 'ok' ? '<a class="btn small" href="' + remind + '" target="_blank" rel="noopener">' + icon('bell') + 'Ingatkan</a>' : '') +
+      '<button class="btn small ghost" type="button" data-act="edit" data-id="' + o.id + '">' + icon('edit') + 'Edit</button>' +
+      '<button class="btn small ghost" type="button" data-act="del" data-id="' + o.id + '">' + icon('trash') + 'Hapus</button>' +
+    '</div>' +
+  '</article>';
+}
+
+function renderGrid() {
+  const list = filtered();
+  const grid = $('#grid');
+  if (!list.length) {
+    const none = !orders.length;
+    grid.innerHTML = '<div class="empty glass" style="grid-column:1/-1">' + icon('sparkles', 'big') +
+      '<h3>' + (none ? 'Belum ada order' : 'Tidak ada hasil') + '</h3>' +
+      '<p>' + (none ? 'Tekan Tambah Order untuk mencatat order pertama kamu.' : 'Coba ganti kata kunci pencarian atau filter status.') + '</p></div>';
+  } else {
+    grid.innerHTML = list.map(x => cardHTML(x.o, x.s)).join('');
+  }
+  $('#exportHint').textContent = list.length + ' order akan masuk file (sesuai filter dan pencarian).';
+}
+
+function renderGreeting() {
+  const h = new Date().getHours();
+  const g = h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam';
+  $('#greeting').textContent = g + ', kak! Yuk cek rekapan order hari ini';
+  $('#today').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function renderAll() {
+  renderGreeting();
+  renderStats();
+  renderChips();
+  renderGrid();
+  $('#sampleBanner').hidden = !orders.some(o => o.sample);
+  const items = digestItems();
+  const rb = $('#remindBanner');
+  rb.hidden = !items.length;
+  if (items.length) {
+    const exp = items.filter(x => x.s.key === 'exp').length;
+    rb.innerHTML = '<span>' + icon('bell') + ' <b>' + items.length + ' customer perlu dihubungi</b> (' + (items.length - exp) + ' mau habis, ' + exp + ' expired).</span>' +
+      '<button class="btn small" type="button" data-act="mail">' + icon('mail') + 'Kirim rekap ke email</button>';
+  }
+}
+
+/* ============================================================
+   PENGINGAT KE EMAIL
+   ============================================================ */
+function digestItems() {
+  return orders.map(o => ({ o, s: statusOf(o) })).filter(x => x.s.key !== 'ok').sort((a, b) => a.s.left - b.s.left);
+}
+function sendDigest() {
+  const items = digestItems();
+  if (!items.length) { toast('Belum ada order yang mau habis atau expired'); return; }
+  if (!prefs.remindEmail) { openSettings(); toast('Isi email kamu dulu'); return; }
+  const lines = items.map(({ o, s }) => {
+    const st = s.key === 'exp' ? 'EXPIRED ' + (-s.left) + ' hari lalu' : (s.left === 0 ? 'habis hari ini' : 'sisa ' + s.left + ' hari');
+    const chat = waLink(o.waBuyer);
+    return '- ' + o.app + ' (' + o.type + ') | ' + o.customer + ' | ' + st + ' | jatuh tempo ' + fmtDate(s.due) + (chat ? '\n  Chat WhatsApp: ' + chat : '');
+  });
+  const subject = 'Pengingat order: ' + items.length + ' customer perlu dihubungi (' + fmtDate(startOfToday()) + ')';
+  const header = 'Customer yang durasinya mau habis atau sudah expired:\n\n';
+  const base = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(prefs.remindEmail) + '&su=' + encodeURIComponent(subject) + '&body=';
+  let n = lines.length;
+  while (n > 1 && (base + encodeURIComponent(header + lines.slice(0, n).join('\n\n'))).length > 1900) n--;
+  let body = header + lines.slice(0, n).join('\n\n');
+  if (n < lines.length) {
+    body += '\n\n(+' + (lines.length - n) + ' lainnya. Daftar lengkap sudah disalin, tempel di sini.)';
+    copyText(header + lines.join('\n\n'));
+  }
+  window.open(base + encodeURIComponent(body), '_blank', 'noopener');
+}
+
+/* ============================================================
+   PENGATURAN
+   ============================================================ */
+function openSettings() {
+  $('#s-email').value = prefs.remindEmail || '';
+  $('#s-folder').value = prefs.folderLink || '';
+  $('#s-client').value = prefs.clientId || CONFIG.GOOGLE_CLIENT_ID || '';
+  $('#s-sheet').value = prefs.sheetUrl || '';
+  $('#s-secret').value = prefs.sheetSecret || '';
+  updateFolderHint();
+  $('#setOverlay').hidden = false;
+}
+function closeSettings() { $('#setOverlay').hidden = true; }
+function updateFolderHint() {
+  const v = $('#s-folder').value.trim();
+  const id = folderIdFrom(v);
+  $('#folderHint').textContent = !v ? 'Kosong = file masuk ke bagian utama Drive kamu.' : id ? 'Folder terbaca. ID: ' + id : 'Link belum dikenali. Salin link folder dari Drive (Bagikan > Salin link).';
+}
+function onSettingsSubmit(e) {
+  e.preventDefault();
+  const email = $('#s-email').value.trim();
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) { toast('Format email belum benar'); return; }
+  const folder = $('#s-folder').value.trim();
+  if (folder && !folderIdFrom(folder)) { toast('Link folder Drive belum dikenali'); return; }
+  const client = $('#s-client').value.trim();
+  if (client !== (prefs.clientId || '') || folderIdFrom(folder) !== folderIdFrom(prefs.folderLink)) { driveToken = null; driveExpiry = 0; }
+  const sheetUrl = $('#s-sheet').value.trim();
+  if (sheetUrl && !/^https:\/\/script\.google\.com\/macros\/s\/\S+\/exec$/.test(sheetUrl)) { toast('Alamat Web App harus berawalan script.google.com dan berakhiran /exec'); return; }
+  prefs.sheetUrl = sheetUrl;
+  prefs.sheetSecret = $('#s-secret').value.trim();
+  prefs.remindEmail = email;
+  prefs.folderLink = folder;
+  prefs.clientId = client;
+  if (!folder) CONFIG.DRIVE_FOLDER_ID = '';
+  applyPrefs();
+  save();
+  closeSettings();
+  updateDriveUI();
+  toast('Pengaturan tersimpan');
+}
+
+/* ============================================================
+   FORM
+   ============================================================ */
+const F = {};
+let editingId = null;
+let proofs = [];          // { name, thumb, blob?, url?, drive? }
+let driveToken = null, driveExpiry = 0;
+
+function initForm() {
+  ['app', 'appCustom', 'dur', 'customDays', 'monthDays', 'date', 'customer', 'waBuyer', 'price', 'cost', 'email', 'pass', 'admin', 'waAdmin', 'files']
+    .forEach(k => { F[k] = $('#f-' + k); });
+
+  F.app.innerHTML = '<option value="">Pilih aplikasi…</option>' +
+    CONFIG.APPS.map(a => '<option value="' + esc(a.name) + '">' + esc(a.name) + '</option>').join('') +
+    '<option value="' + OTHER + '">Lainnya…</option>';
+  F.dur.innerHTML = '<option value="">Pilih durasi…</option>' +
+    DURATIONS.map(d => '<option value="' + d.key + '">' + esc(d.label) + '</option>').join('');
+
+  F.app.addEventListener('change', () => {
+    $('#wrapAppCustom').hidden = F.app.value !== OTHER;
+    if (F.app.value && F.app.value !== OTHER) F.monthDays.value = appMonthDays(F.app.value);
+    updateDue();
+  });
+  F.dur.addEventListener('change', () => {
+    const k = F.dur.value;
+    $('#wrapCustomDays').hidden = k !== 'custom';
+    $('#wrapMonthDays').hidden = !(durByKey(k) && durByKey(k).months);
+    updateDue();
+  });
+  [F.customDays, F.monthDays, F.date].forEach(el => el.addEventListener('input', updateDue));
+
+  [F.price, F.cost].forEach(el => el.addEventListener('input', () => {
+    const d = el.value.replace(/\D/g, '');
+    el.value = d ? nf.format(parseInt(d, 10)) : '';
+    updateProfit();
+  }));
+
+  bindWa(F.waBuyer, $('#waBuyerLink'));
+  bindWa(F.waAdmin, $('#waAdminLink'));
+
+  $('#btnTogglePass').addEventListener('click', () => {
+    const show = F.pass.type === 'password';
+    F.pass.type = show ? 'text' : 'password';
+    $('#btnTogglePass').innerHTML = icon(show ? 'eyeoff' : 'eye');
+    $('#btnTogglePass').setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
+  });
+
+  F.files.addEventListener('change', () => { addFiles(Array.from(F.files.files)); F.files.value = ''; });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => addFiles(Array.from(e.dataTransfer.files)));
+
+  $('#btnDrive').addEventListener('click', () => connectDrive().catch(err => toast(err.message)));
+  $$('input[name="proofStatus"]').forEach(r => r.addEventListener('change', syncProofWrap));
+  $('#orderForm').addEventListener('submit', onSubmit);
+  $('#btnCancel').addEventListener('click', closeForm);
+  $('#btnCloseForm').addEventListener('click', closeForm);
+}
+
+function bindWa(input, anchor) {
+  const up = () => {
+    const l = waLink(input.value);
+    anchor.href = l || '#';
+    anchor.classList.toggle('disabled', !l);
+  };
+  input.addEventListener('input', up);
+  anchor.addEventListener('click', e => { if (!waNum(input.value)) e.preventDefault(); });
+  up();
+  input._refresh = up;
+}
+
+function updateProfit() {
+  const g = num(F.price.value) - num(F.cost.value);
+  const box = $('#profitBox');
+  box.classList.toggle('loss', g < 0);
+  $('#profitVal').textContent = rp(g);
+  const p = num(F.price.value);
+  $('#profitPct').textContent = p > 0 ? 'margin ' + Math.round(g / p * 100) + '%' : '';
+}
+
+function updateDue() {
+  const days = calcDays(F.dur.value, F.customDays.value, F.monthDays.value);
+  const box = $('#dueText');
+  if (!F.dur.value || !F.date.value || !days) {
+    box.textContent = 'Pilih durasi dan tanggal untuk melihat jatuh tempo.';
+    return;
+  }
+  const due = addDays(parseISO(F.date.value), days);
+  box.textContent = 'Jatuh tempo ' + fmtDate(due) + ' (' + days + ' hari)';
+}
+
+function openForm(id) {
+  editingId = id || null;
+  const o = id ? orders.find(x => x.id === id) : null;
+  $('#formTitleText').textContent = o ? 'Edit Order' : 'Tambah Order';
+  $('#btnSaveText').textContent = o ? 'Simpan Perubahan' : 'Simpan Order';
+  $('#formErr').textContent = '';
+  $$('.in.invalid').forEach(el => el.classList.remove('invalid'));
+  proofs = [];
+
+  const known = o && CONFIG.APPS.some(a => a.name === o.app);
+  F.app.value = o ? (known ? o.app : OTHER) : '';
+  F.appCustom.value = o && !known ? o.app : '';
+  $('#wrapAppCustom').hidden = F.app.value !== OTHER;
+  $('#t-' + (o && o.type === 'Private' ? 'private' : 'sharing')).checked = true;
+  F.dur.value = o ? o.durKey : '';
+  F.customDays.value = o && o.durKey === 'custom' ? o.days : '';
+  F.monthDays.value = o ? o.monthDays : 30;
+  $('#wrapCustomDays').hidden = F.dur.value !== 'custom';
+  $('#wrapMonthDays').hidden = !(durByKey(F.dur.value) && durByKey(F.dur.value).months);
+  F.date.value = o ? o.orderDate : toISO(startOfToday());
+  F.customer.value = o ? o.customer : '';
+  F.waBuyer.value = o ? o.waBuyer : '';
+  F.price.value = o && o.price ? nf.format(o.price) : '';
+  F.cost.value = o && o.cost ? nf.format(o.cost) : '';
+  F.email.value = o ? o.email : '';
+  F.pass.value = o ? o.password : '';
+  F.pass.type = 'password';
+  $('#btnTogglePass').innerHTML = icon('eye');
+  F.admin.value = o ? o.admin : '';
+  F.waAdmin.value = o ? o.waAdmin : '';
+  if (o && o.proofs) proofs = o.proofs.map(p => Object.assign({}, p));
+  $('#ps-' + (o ? proofStatusOf(o) : 'not')).checked = true;
+  syncProofWrap();
+
+  F.waBuyer._refresh(); F.waAdmin._refresh();
+  updateProfit(); updateDue(); renderPreviews(); updateDriveUI();
+  $('#formOverlay').hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => F.app.focus(), 30);
+}
+function closeForm() {
+  $('#formOverlay').hidden = true;
+  document.body.style.overflow = '';
+  editingId = null;
+}
+
+/* ---------- Upload bukti ---------- */
+function proofStatusOf(o) { return o.proofStatus || ((o.proofs && o.proofs.length) ? 'sent' : 'not'); }
+function syncProofWrap() {
+  const sent = $('#ps-sent').checked;
+  $('#proofWrap').hidden = !sent;
+  if (sent) updateDriveUI();
+}
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('File bukan gambar yang valid')); };
+    img.src = url;
+  });
+}
+function scaleTo(img, max, quality) {
+  const r = Math.min(1, max / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(img.width * r));
+  c.height = Math.max(1, Math.round(img.height * r));
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(b => res({ blob: b, dataUrl: c.toDataURL('image/jpeg', quality) }), 'image/jpeg', quality));
+}
+async function addFiles(files) {
+  const imgs = files.filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) return;
+  const room = CONFIG.MAX_PROOFS - proofs.length;
+  if (room <= 0) { toast('Maksimal ' + CONFIG.MAX_PROOFS + ' foto'); return; }
+  if (imgs.length > room) toast('Hanya ' + room + ' foto lagi yang bisa ditambah');
+  for (const f of imgs.slice(0, room)) {
+    try {
+      const img = await loadImage(f);
+      const full = await scaleTo(img, 1600, 0.85);
+      const thumb = await scaleTo(img, 480, 0.7);
+      proofs.push({ name: f.name.replace(/\.[^.]+$/, '') + '.jpg', thumb: thumb.dataUrl, blob: full.blob });
+    } catch (e) { toast(e.message); }
+  }
+  renderPreviews();
+}
+function renderPreviews() {
+  $('#previews').innerHTML = proofs.map((p, i) =>
+    '<div class="pv"><img src="' + esc(p.thumb) + '" alt="Bukti ' + (i + 1) + '">' +
+    '<button type="button" data-rm="' + i + '" aria-label="Hapus foto ' + (i + 1) + '">' + icon('x') + '</button>' +
+    (p.drive ? '<em>Drive</em>' : '') + '</div>'
+  ).join('');
+  $$('[data-rm]', $('#previews')).forEach(b => b.addEventListener('click', () => {
+    proofs.splice(+b.getAttribute('data-rm'), 1); renderPreviews();
+  }));
+}
+
+/* ---------- Google Drive ---------- */
+function driveReady() { return !!driveToken && Date.now() < driveExpiry - 30000; }
+function updateDriveUI() {
+  const on = driveReady();
+  $('#driveDot').classList.toggle('on', on);
+  $('#driveText').textContent = on
+    ? 'Terhubung ke Google Drive. Foto baru akan diunggah ke Drive.'
+    : (CONFIG.GOOGLE_CLIENT_ID ? 'Google Drive belum terhubung. Foto disimpan di browser ini.' : 'Client ID Google belum diisi di kode. Foto disimpan di browser ini.');
+  $('#btnDrive').hidden = on;
+}
+function loadGsi() {
+  return new Promise((resolve, reject) => {
+    if (window.google && google.accounts && google.accounts.oauth2) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Gagal memuat Google Sign-In. Cek koneksi internet.'));
+    document.head.appendChild(s);
+  });
+}
+function connectDrive() {
+  if (!CONFIG.GOOGLE_CLIENT_ID) {
+    return Promise.reject(new Error('Isi GOOGLE_CLIENT_ID di bagian CONFIG pada kode dulu.'));
+  }
+  return loadGsi().then(() => new Promise((resolve, reject) => {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: CONFIG.GOOGLE_CLIENT_ID,
+      // Folder yang sudah ada hanya bisa diisi dengan akses Drive penuh; tanpa folder cukup drive.file
+      scope: CONFIG.DRIVE_FOLDER_ID ? 'https://www.googleapis.com/auth/drive' : CONFIG.DRIVE_SCOPE,
+      callback: resp => {
+        if (resp.error) return reject(new Error('Izin Google Drive ditolak'));
+        driveToken = resp.access_token;
+        driveExpiry = Date.now() + (parseInt(resp.expires_in, 10) || 3600) * 1000;
+        updateDriveUI();
+        toast('Google Drive terhubung');
+        resolve();
+      },
+      error_callback: () => reject(new Error('Login Google dibatalkan'))
+    });
+    client.requestAccessToken({ prompt: driveToken ? '' : 'consent' });
+  }));
+}
+async function uploadToDrive(blob, name) {
+  if (!driveReady()) await connectDrive();
+  const meta = { name };
+  if (CONFIG.DRIVE_FOLDER_ID) meta.parents = [CONFIG.DRIVE_FOLDER_ID];
+  const b = 'orderproof' + Date.now();
+  const body = new Blob([
+    '--' + b + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(meta) + '\r\n',
+    '--' + b + '\r\nContent-Type: ' + (blob.type || 'image/jpeg') + '\r\n\r\n', blob, '\r\n--' + b + '--'
+  ]);
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + driveToken, 'Content-Type': 'multipart/related; boundary=' + b },
+    body
+  });
+  if (!res.ok) throw new Error('Upload ke Drive gagal (' + res.status + ')');
+  const j = await res.json();
+  return j.webViewLink || ('https://drive.google.com/file/d/' + j.id + '/view');
+}
+
+/* ---------- Simpan ---------- */
+async function onSubmit(e) {
+  e.preventDefault();
+  const err = $('#formErr');
+  $$('.in.invalid').forEach(el => el.classList.remove('invalid'));
+  const bad = el => { el.classList.add('invalid'); return true; };
+  let invalid = false;
+
+  const appVal = F.app.value === OTHER ? F.appCustom.value.trim() : F.app.value;
+  if (!appVal) invalid = bad(F.app.value === OTHER ? F.appCustom : F.app);
+  if (!F.dur.value) invalid = bad(F.dur) || invalid;
+  const monthDays = parseInt(F.monthDays.value, 10) || 30;
+  const days = calcDays(F.dur.value, F.customDays.value, monthDays);
+  if (F.dur.value && !days) invalid = bad(F.dur.value === 'custom' ? F.customDays : F.dur) || invalid;
+  if (!F.date.value) invalid = bad(F.date) || invalid;
+  if (!F.customer.value.trim()) invalid = bad(F.customer) || invalid;
+  if (!num(F.price.value)) invalid = bad(F.price) || invalid;
+  if (F.cost.value === '') invalid = bad(F.cost) || invalid;
+  if (F.email.value.trim() && !/^\S+@\S+\.\S+$/.test(F.email.value.trim())) invalid = bad(F.email) || invalid;
+  if (invalid) { err.textContent = 'Ada kolom yang belum lengkap atau belum sesuai. Cek yang bertanda merah.'; return; }
+  err.textContent = '';
+
+  const btn = $('#btnSave');
+  btn.disabled = true;
+  const sentProof = ($('input[name="proofStatus"]:checked') || {}).value === 'sent';
+  const list = sentProof ? proofs : [];
+  const pending = list.filter(p => p.blob);
+  let done = 0, failed = 0;
+  const finalProofs = [];
+  // Minta izin Drive langsung setelah klik Simpan supaya popup login tidak diblokir browser
+  if (pending.length && CONFIG.GOOGLE_CLIENT_ID && !driveReady()) {
+    try { await connectDrive(); } catch (ex) { toast(ex.message); }
+  }
+  for (const p of list) {
+    if (!p.blob) { finalProofs.push({ name: p.name, thumb: p.thumb, url: p.url || '', drive: !!p.drive }); continue; }
+    if (CONFIG.GOOGLE_CLIENT_ID && driveReady()) {
+      try {
+        $('#btnSaveText').textContent = 'Mengunggah ' + (++done) + '/' + pending.length + '…';
+        const url = await uploadToDrive(p.blob, p.name);
+        finalProofs.push({ name: p.name, thumb: p.thumb, url, drive: true });
+        continue;
+      } catch (ex) { failed++; }
+    }
+    finalProofs.push({ name: p.name, thumb: p.thumb, url: '', drive: false });
+  }
+  if (failed) toast(failed + ' foto gagal ke Drive dan disimpan lokal');
+
+  const old = editingId ? orders.find(x => x.id === editingId) : null;
+  const rec = {
+    id: old ? old.id : uid(),
+    app: appVal,
+    type: ($('input[name="type"]:checked') || {}).value || 'Sharing',
+    durKey: F.dur.value, days, monthDays,
+    customDays: F.customDays.value,
+    orderDate: F.date.value,
+    customer: F.customer.value.trim(),
+    waBuyer: F.waBuyer.value.trim(),
+    price: num(F.price.value), cost: num(F.cost.value),
+    email: F.email.value.trim(), password: F.pass.value,
+    admin: F.admin.value.trim(), waAdmin: F.waAdmin.value.trim(),
+    proofs: finalProofs,
+    proofStatus: sentProof ? 'sent' : 'not',
+    createdAt: old ? old.createdAt : Date.now()
+  };
+  if (old) orders[orders.indexOf(old)] = rec; else orders.unshift(rec);
+  save();
+  btn.disabled = false;
+  $('#btnSaveText').textContent = old ? 'Simpan Perubahan' : 'Simpan Order';
+  closeForm();
+  renderAll();
+  toast(old ? 'Perubahan tersimpan' : 'Order tersimpan');
+}
+
+/* ============================================================
+   EXPORT KE EXCEL
+   ============================================================ */
+function exportRows(withPass) {
+  const list = filtered();
+  const rows = list.map(({ o, s }, i) => {
+    const r = {
+      'No': i + 1,
+      'Nama Aplikasi': o.app,
+      'Jenis': o.type,
+      'Durasi': durLabel(o),
+      'Tanggal Order': o.orderDate,
+      'Jatuh Tempo': toISO(s.due),
+      'Sisa Hari': s.left,
+      'Status': s.key === 'exp' ? 'Expired' : s.key === 'warn' ? 'Mau habis' : 'Aktif',
+      'Nama Customer': o.customer,
+      'WhatsApp Pembeli': waNum(o.waBuyer) || o.waBuyer,
+      'Harga Jual': o.price,
+      'Modal Beli': o.cost,
+      'Untung Bersih': profitOf(o),
+      'Email Aplikasi': o.email
+    };
+    if (withPass) r['Password Aplikasi'] = o.password || '';
+    r['Nama Admin FH'] = o.admin;
+    r['WhatsApp Admin FH'] = waNum(o.waAdmin) || o.waAdmin;
+    r['Link Bukti'] = (o.proofs || []).map(p => p.url).filter(Boolean).join(' | ');
+    return r;
+  });
+  return rows;
+}
+function doExport() {
+  const rows = exportRows($('#exPass').checked);
+  if (!rows.length) { toast('Tidak ada data untuk diexport'); return; }
+  const stamp = toISO(new Date()).replace(/-/g, '');
+  const total = {};
+  Object.keys(rows[0]).forEach(k => { total[k] = ''; });
+  total['Nama Aplikasi'] = 'TOTAL';
+  ['Harga Jual', 'Modal Beli', 'Untung Bersih'].forEach(k => { total[k] = rows.reduce((s, r) => s + (r[k] || 0), 0); });
+  const all = rows.concat([total]);
+
+  if (window.XLSX) {
+    const ws = XLSX.utils.json_to_sheet(all);
+    ws['!cols'] = Object.keys(all[0]).map(k => ({ wch: Math.max(k.length + 2, 14) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Rekap Order');
+    XLSX.writeFile(wb, 'rekap-order-' + stamp + '.xlsx');
+    toast('File Excel diunduh');
+    return;
+  }
+  // Cadangan bila library Excel gagal dimuat: CSV dengan pemisah titik koma (cocok untuk Excel Indonesia)
+  const cols = Object.keys(all[0]);
+  const cell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const csv = '\uFEFF' + [cols.map(cell).join(';')].concat(all.map(r => cols.map(c => cell(r[c])).join(';'))).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'rekap-order-' + stamp + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('File CSV diunduh');
+}
+
+/* ============================================================
+   SINKRON GOOGLE SHEETS
+   ============================================================ */
+let pushTimer = null;
+function sheetReady() {
+  return /^https:\/\/script\.google\.com\//.test(prefs.sheetUrl || '') && !!prefs.sheetSecret;
+}
+function setSyncStatus(msg) {
+  const t = msg + ' (' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ')';
+  ['#syncStatus', '#syncStatus2'].forEach(s => { const el = $(s); if (el) el.textContent = t; });
+}
+function schedulePush() {
+  if (!sheetReady()) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => pushToSheet(true), 1500);
+}
+function sheetPayload() {
+  return orders.filter(o => !o.sample).map(o => ({
+    id: o.id, app: o.app, type: o.type, durKey: o.durKey, durLabel: durLabel(o), days: o.days,
+    monthDays: o.monthDays, customDays: o.customDays, orderDate: o.orderDate, customer: o.customer,
+    waBuyer: o.waBuyer, waBuyerNorm: waNum(o.waBuyer), price: o.price, cost: o.cost,
+    email: o.email, admin: o.admin, waAdmin: o.waAdmin, waAdminNorm: waNum(o.waAdmin),
+    proofs: (o.proofs || []).map(p => ({ name: p.name, url: p.url || '', drive: !!p.drive })),
+    createdAt: o.createdAt
+  }));
+}
+async function pushToSheet(quiet) {
+  if (!sheetReady()) { if (!quiet) toast('Isi alamat Web App dan kata sandi Sheet di pengaturan dulu'); return; }
+  try {
+    setSyncStatus('Mengirim ke Sheet');
+    const res = await fetch(prefs.sheetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ secret: prefs.sheetSecret, action: 'push', orders: sheetPayload() })
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'Ditolak oleh skrip');
+    setSyncStatus('Tersinkron ke Sheet: ' + j.count + ' order');
+    if (!quiet) toast('Data terkirim ke Google Sheets');
+  } catch (e) {
+    setSyncStatus('Gagal sinkron ke Sheet');
+    toast('Gagal ke Sheet: ' + e.message);
+  }
+}
+async function pullFromSheet() {
+  if (!sheetReady()) { toast('Isi alamat Web App dan kata sandi Sheet di pengaturan dulu'); return; }
+  try {
+    setSyncStatus('Mengambil dari Sheet');
+    const url = prefs.sheetUrl + (prefs.sheetUrl.indexOf('?') >= 0 ? '&' : '?') + 'secret=' + encodeURIComponent(prefs.sheetSecret);
+    const res = await fetch(url);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'Ditolak oleh skrip');
+    const local = new Map(orders.map(o => [o.id, o]));
+    orders = (j.orders || []).map(r => {
+      const l = local.get(r.id);
+      const keepProofs = l && l.proofs && l.proofs.length;
+      return Object.assign({}, r, {
+        password: l ? l.password : '',
+        proofs: keepProofs ? l.proofs : (r.proofs || []).map(p => Object.assign({ thumb: '' }, p))
+      });
+    });
+    save();
+    renderAll();
+    setSyncStatus('Diambil dari Sheet: ' + orders.length + ' order');
+    toast('Data dari Sheet dimuat');
+  } catch (e) {
+    setSyncStatus('Gagal mengambil dari Sheet');
+    toast('Gagal ambil dari Sheet: ' + e.message);
+  }
+}
+
+/* ============================================================
+   PROFIL TOKO
+   ============================================================ */
+function renderStore() {
+  const st = prefs.store;
+  $('#storeBanner').style.backgroundImage = st.banner ? 'url("' + st.banner + '")' : '';
+  const av = $('#storeAvatar');
+  av.style.backgroundImage = st.avatar ? 'url("' + st.avatar + '")' : '';
+  av.textContent = st.avatar ? '' : ((String(st.name || 'T').trim()[0] || 'T').toUpperCase());
+  $('#storeName').innerHTML = icon('gem') + '<span>' + esc(st.name || 'Nama Toko') + '</span>';
+  $('#storeBio').textContent = st.bio || 'Tambahkan bio toko lewat tombol Edit profil.';
+  $('#btnWaStore').href = waLink(st.wa, 'Halo kak, aku mau tanya produk di ' + (st.name || 'toko') + '.') || '#';
+}
+async function setStoreImage(file, kind) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const before = prefs.store[kind];
+  try {
+    const img = await loadImage(file);
+    const out = await scaleTo(img, kind === 'banner' ? 1200 : 320, 0.78);
+    prefs.store[kind] = out.dataUrl;
+    if (save()) toast(kind === 'banner' ? 'Banner diperbarui' : 'Foto profil diperbarui');
+    else prefs.store[kind] = before;
+  } catch (e) { toast(e.message); }
+  renderStore();
+}
+function openStoreForm() {
+  const st = prefs.store;
+  $('#st-name').value = st.name || '';
+  $('#st-bio').value = st.bio || '';
+  $('#st-wa').value = st.wa || '';
+  $('#st-wa')._refresh();
+  $('#storeOverlay').hidden = false;
+  setTimeout(() => $('#st-name').focus(), 30);
+}
+function closeStoreForm() { $('#storeOverlay').hidden = true; }
+function onStoreSubmit(e) {
+  e.preventDefault();
+  const name = $('#st-name').value.trim();
+  if (!name) { $('#st-name').classList.add('invalid'); toast('Nama toko wajib diisi'); return; }
+  $('#st-name').classList.remove('invalid');
+  prefs.store.name = name;
+  prefs.store.bio = $('#st-bio').value.trim();
+  prefs.store.wa = $('#st-wa').value.trim();
+  save();
+  renderStore();
+  closeStoreForm();
+  toast('Profil toko tersimpan');
+}
+function bindStore() {
+  bindWa($('#st-wa'), $('#stWaLink'));
+  $('#bannerFile').addEventListener('change', e => { setStoreImage(e.target.files[0], 'banner'); e.target.value = ''; });
+  $('#avatarFile').addEventListener('change', e => { setStoreImage(e.target.files[0], 'avatar'); e.target.value = ''; });
+  $('#btnEditStore').addEventListener('click', openStoreForm);
+  $('#btnWaStore').addEventListener('click', e => {
+    if (!waNum(prefs.store.wa)) { e.preventDefault(); toast('Isi nomor WhatsApp toko dulu'); openStoreForm(); }
+  });
+  $('#storeForm').addEventListener('submit', onStoreSubmit);
+  $('#btnCloseStore').addEventListener('click', closeStoreForm);
+  $('#btnStoreCancel').addEventListener('click', closeStoreForm);
+  $('#storeOverlay').addEventListener('mousedown', e => { if (e.target.id === 'storeOverlay') closeStoreForm(); });
+  $$('[data-reset]').forEach(b => b.addEventListener('click', () => {
+    prefs.store[b.getAttribute('data-reset')] = '';
+    save(); renderStore();
+    toast(b.getAttribute('data-reset') === 'banner' ? 'Banner dikembalikan' : 'Foto profil dihapus');
+  }));
+}
+
+/* ============================================================
+   EVENT UTAMA
+   ============================================================ */
+function bindMain() {
+  $('#btnAdd').addEventListener('click', () => openForm());
+  $('#btnFab').addEventListener('click', () => openForm());
+  $('#btnExport').addEventListener('click', doExport);
+  $('#btnMail').addEventListener('click', sendDigest);
+  $('#btnSettings').addEventListener('click', openSettings);
+  $('#btnPush').addEventListener('click', () => {
+    // simpan dulu isian yang sedang diketik, lalu kirim
+    const u = $('#s-sheet').value.trim(), k = $('#s-secret').value.trim();
+    if (/^https:\/\/script\.google\.com\/macros\/s\/\S+\/exec$/.test(u)) { prefs.sheetUrl = u; prefs.sheetSecret = k; }
+    pushToSheet(false);
+  });
+  let pullArmed = false, pullTimer;
+  $('#btnPull').addEventListener('click', e => {
+    const b = e.currentTarget;
+    if (!pullArmed) {
+      pullArmed = true;
+      b.textContent = 'Yakin? Data di browser ditimpa';
+      pullTimer = setTimeout(() => { pullArmed = false; b.textContent = 'Ambil dari Sheet'; }, 3500);
+      return;
+    }
+    clearTimeout(pullTimer); pullArmed = false; b.textContent = 'Ambil dari Sheet';
+    const u = $('#s-sheet').value.trim(), k = $('#s-secret').value.trim();
+    if (/^https:\/\/script\.google\.com\/macros\/s\/\S+\/exec$/.test(u)) { prefs.sheetUrl = u; prefs.sheetSecret = k; }
+    pullFromSheet();
+  });
+  $('#remindBanner').addEventListener('click', e => { if (e.target.closest('[data-act="mail"]')) sendDigest(); });
+  $('#setForm').addEventListener('submit', onSettingsSubmit);
+  $('#s-folder').addEventListener('input', updateFolderHint);
+  $('#btnCloseSet').addEventListener('click', closeSettings);
+  $('#btnSetCancel').addEventListener('click', closeSettings);
+  $('#setOverlay').addEventListener('mousedown', e => { if (e.target.id === 'setOverlay') closeSettings(); });
+  $('#q').addEventListener('input', e => { settings.q = e.target.value; renderGrid(); });
+  $('#sort').addEventListener('change', e => { settings.sort = e.target.value; renderGrid(); });
+  $('#warnDays').addEventListener('change', e => { settings.warnDays = parseInt(e.target.value, 10); save(); renderAll(); });
+  $('#chips').addEventListener('click', e => {
+    const b = e.target.closest('[data-filter]');
+    if (!b) return;
+    settings.filter = b.getAttribute('data-filter');
+    renderChips(); renderGrid();
+  });
+  $('#btnClearSample').addEventListener('click', () => {
+    orders = orders.filter(o => !o.sample); save(); renderAll(); toast('Data contoh dihapus');
+  });
+
+  const delTimers = {};
+  $('#grid').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const id = b.getAttribute('data-id');
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    const act = b.getAttribute('data-act');
+    if (act === 'edit') openForm(id);
+    else if (act === 'copy-email') copyText(o.email);
+    else if (act === 'copy-pass') copyText(o.password);
+    else if (act === 'toggle-pass') {
+      const code = $('[data-pass="' + id + '"]');
+      const hidden = code.textContent.indexOf('•') === 0;
+      code.textContent = hidden ? o.password : '••••••••';
+      b.innerHTML = icon(hidden ? 'eyeoff' : 'eye');
+    } else if (act === 'del') {
+      if (b.classList.contains('danger-confirm')) {
+        clearTimeout(delTimers[id]);
+        orders = orders.filter(x => x.id !== id); save(); renderAll(); toast('Order dihapus');
+      } else {
+        b.classList.add('danger-confirm');
+        b.innerHTML = icon('trash') + 'Yakin hapus?';
+        delTimers[id] = setTimeout(() => { b.classList.remove('danger-confirm'); b.innerHTML = icon('trash') + 'Hapus'; }, 3000);
+      }
+    } else if (act === 'proof') {
+      const p = o.proofs[+b.getAttribute('data-i')];
+      if (!p) return;
+      $('#lbImg').src = p.thumb;
+      $('#lbName').textContent = o.app + ' · ' + o.customer;
+      const lk = $('#lbLink');
+      lk.hidden = !p.url;
+      if (p.url) lk.href = p.url;
+      $('#lbOverlay').hidden = false;
+    }
+  });
+  $('#lbClose').addEventListener('click', () => { $('#lbOverlay').hidden = true; });
+  $('#lbOverlay').addEventListener('click', e => { if (e.target.id === 'lbOverlay') $('#lbOverlay').hidden = true; });
+  $('#formOverlay').addEventListener('mousedown', e => { if (e.target.id === 'formOverlay') closeForm(); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!$('#lbOverlay').hidden) $('#lbOverlay').hidden = true;
+    else if (!$('#storeOverlay').hidden) closeStoreForm();
+    else if (!$('#setOverlay').hidden) closeSettings();
+    else if (!$('#formOverlay').hidden) closeForm();
+  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) renderAll(); });
+}
+
+/* ============================================================
+   MULAI
+   ============================================================ */
+load();
+applyPrefs();
+hydrateIcons();
+initForm();
+bindMain();
+bindStore();
+renderStore();
+$('#warnDays').value = String(settings.warnDays);
+$('#sort').value = settings.sort;
+renderAll();
+
+// Untuk pengujian: fungsi hitung tanggal bisa dipanggil dari console
+window.__rekap = { calcDays, statusOf, waNum };
+})();
+</script>
+</body>
+</html>
