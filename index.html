@@ -296,6 +296,13 @@ a.tag.wa{border-color:#BFEBD3;background:#EFFBF4;color:var(--ok-ink)}
   .banner-cam{padding:6px 8px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== Layout statistik yang dirapikan (menimpa aturan lama di atas) ===== */
+.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:768px){.stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}}
+.stat{text-align:center;overflow:hidden}
+.stat .lbl{justify-content:center;font-size:clamp(11px,2.5vw,13px)}
+.stat .val{font-size:clamp(14px,4vw,20px);word-break:break-word}
 </style>
 </head>
 <body>
@@ -356,6 +363,9 @@ a.tag.wa{border-color:#BFEBD3;background:#EFFBF4;color:var(--ok-ink)}
           <option value="new">Order terbaru</option>
           <option value="profit">Untung tertinggi</option>
         </select>
+      </label>
+      <label class="sel-wrap">Bulan
+        <select class="sel" id="monthSel"></select>
       </label>
       <label class="sel-wrap">Peringatan
         <select class="sel" id="warnDays">
@@ -428,6 +438,13 @@ a.tag.wa{border-color:#BFEBD3;background:#EFFBF4;color:var(--ok-ink)}
           <label for="f-monthDays">Hari per bulan</label>
           <input class="in" id="f-monthDays" type="number" min="25" max="31" inputmode="numeric">
           <span class="hint">Isi 25 sampai 30 sesuai aturan aplikasinya.</span>
+        </div>
+        <div class="field" id="wrapRenewal" hidden>
+          <label for="f-renewal">Butuh Renewal?</label>
+          <select class="in" id="f-renewal">
+            <option value="tidak">Tidak</option>
+            <option value="ya">Ya</option>
+          </select>
         </div>
         <div class="field">
           <label for="f-date">Tanggal Order <i>*</i></label>
@@ -826,7 +843,7 @@ function durLabel(o) {
   return d.label;
 }
 
-const settings = { warnDays: 3, filter: 'all', sort: 'due', q: '' };
+const settings = { warnDays: 3, filter: 'all', sort: 'due', q: '', month: 'all' };
 
 function statusOf(o) {
   const today = startOfToday();
@@ -938,9 +955,29 @@ function avatarOf(name) {
   return '<div class="avatar" style="background:' + AV_COLORS[h % AV_COLORS.length] + '">' + esc(ini) + '</div>';
 }
 
+/* ---------- Filter per bulan (berdasarkan Tanggal Order) ---------- */
+const monthOf = o => String(o.orderDate || '').slice(0, 7);
+function monthLabel(k) {
+  const p = k.split('-').map(Number);
+  return new Date(p[0], p[1] - 1, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+}
+function scoped() {
+  return settings.month === 'all' ? orders : orders.filter(o => monthOf(o) === settings.month);
+}
+function renderMonths() {
+  const set = new Set(orders.map(monthOf).filter(Boolean));
+  set.add(monthOf({ orderDate: toISO(startOfToday()) }));
+  const keys = Array.from(set).sort().reverse();
+  if (settings.month !== 'all' && !set.has(settings.month)) settings.month = 'all';
+  const sel = $('#monthSel');
+  sel.innerHTML = '<option value="all">Semua bulan</option>' +
+    keys.map(k => '<option value="' + k + '">' + esc(monthLabel(k)) + '</option>').join('');
+  sel.value = settings.month;
+}
+
 function filtered() {
   const q = settings.q.trim().toLowerCase();
-  let list = orders.map(o => ({ o, s: statusOf(o) }));
+  let list = scoped().map(o => ({ o, s: statusOf(o) }));
   if (settings.filter !== 'all') list = list.filter(x => x.s.key === settings.filter);
   if (q) {
     list = list.filter(({ o }) => [o.customer, o.app, o.admin, o.email, o.waBuyer, o.type].join(' ').toLowerCase().includes(q));
@@ -952,10 +989,11 @@ function filtered() {
 }
 
 function renderStats() {
-  const total = orders.length;
-  const income = orders.reduce((s, o) => s + (o.price || 0), 0);
-  const gain = orders.reduce((s, o) => s + profitOf(o), 0);
-  const attn = orders.filter(o => statusOf(o).key !== 'ok').length;
+  const sc = scoped();
+  const total = sc.length;
+  const income = sc.reduce((s, o) => s + (o.price || 0), 0);
+  const gain = sc.reduce((s, o) => s + profitOf(o), 0);
+  const attn = sc.filter(o => statusOf(o).key !== 'ok').length;
   $('#stats').innerHTML =
     '<div class="stat"><div class="lbl">' + icon('bag') + 'Total Order</div><div class="val">' + nf.format(total) + '</div></div>' +
     '<div class="stat money"><div class="lbl">' + icon('cash') + 'Total Pendapatan</div><div class="val">' + rp(income) + '</div></div>' +
@@ -964,8 +1002,9 @@ function renderStats() {
 }
 
 function renderChips() {
-  const c = { all: orders.length, ok: 0, warn: 0, exp: 0 };
-  orders.forEach(o => { c[statusOf(o).key]++; });
+  const sc = scoped();
+  const c = { all: sc.length, ok: 0, warn: 0, exp: 0 };
+  sc.forEach(o => { c[statusOf(o).key]++; });
   const defs = [['all', 'Semua'], ['ok', 'Aktif'], ['warn', 'Mau habis'], ['exp', 'Expired']];
   $('#chips').innerHTML = defs.map(([k, l]) =>
     '<button type="button" class="chip" data-filter="' + k + '" aria-pressed="' + (settings.filter === k) + '">' + l + '<span class="n">' + c[k] + '</span></button>'
@@ -1000,6 +1039,7 @@ function cardHTML(o, s) {
       '<div>' + icon('user') + '<span>Customer <b>' + esc(o.customer) + '</b></span></div>' +
       '<div>' + icon('calendar') + '<span>' + fmtDate(parseISO(o.orderDate)) + ' &rarr; <b>' + fmtDate(s.due) + '</b></span></div>' +
       '<div>' + icon('clock') + '<span>' + esc(durLabel(o)) + '</span></div>' +
+      (o.renewal === 'ya' ? '<div>' + icon('bell') + '<span><b>Butuh renewal</b></span></div>' : '') +
     '</div>' +
     '<div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + s.pct + '" aria-label="Masa aktif terpakai"><i class="' + s.key + '" style="width:' + s.pct + '%"></i></div>' +
       '<div class="bar-lbl"><span>' + esc(s.sub) + '</span><span>' + s.pct + '% terpakai</span></div></div>' +
@@ -1048,6 +1088,7 @@ function renderGreeting() {
 
 function renderAll() {
   renderGreeting();
+  renderMonths();
   renderStats();
   renderChips();
   renderGrid();
@@ -1144,7 +1185,7 @@ let proofs = [];          // { name, thumb, blob?, url?, drive? }
 let driveToken = null, driveExpiry = 0;
 
 function initForm() {
-  ['app', 'appCustom', 'dur', 'customDays', 'monthDays', 'date', 'customer', 'waBuyer', 'price', 'cost', 'email', 'pass', 'admin', 'waAdmin', 'files']
+  ['app', 'appCustom', 'dur', 'customDays', 'monthDays', 'date', 'customer', 'waBuyer', 'price', 'cost', 'email', 'pass', 'admin', 'waAdmin', 'files', 'renewal']
     .forEach(k => { F[k] = $('#f-' + k); });
 
   F.app.innerHTML = '<option value="">Pilih aplikasi…</option>' +
@@ -1216,7 +1257,16 @@ function updateProfit() {
   $('#profitPct').textContent = p > 0 ? 'margin ' + Math.round(g / p * 100) + '%' : '';
 }
 
+// Kolom "Butuh Renewal?" muncul otomatis kalau total durasi lebih dari 1 bulan (31 hari)
+function syncRenewal() {
+  const days = calcDays(F.dur.value, F.customDays.value, F.monthDays.value);
+  const show = days > 31;
+  $('#wrapRenewal').hidden = !show;
+  if (!show) F.renewal.value = 'tidak';
+}
+
 function updateDue() {
+  syncRenewal();
   const days = calcDays(F.dur.value, F.customDays.value, F.monthDays.value);
   const box = $('#dueText');
   if (!F.dur.value || !F.date.value || !days) {
@@ -1262,6 +1312,7 @@ function openForm(id) {
   syncProofWrap();
 
   F.waBuyer._refresh(); F.waAdmin._refresh();
+  F.renewal.value = o && o.renewal ? o.renewal : 'tidak';
   updateProfit(); updateDue(); renderPreviews(); updateDriveUI();
   $('#formOverlay').hidden = false;
   document.body.style.overflow = 'hidden';
@@ -1449,6 +1500,7 @@ async function onSubmit(e) {
     admin: F.admin.value.trim(), waAdmin: F.waAdmin.value.trim(),
     proofs: finalProofs,
     proofStatus: sentProof ? 'sent' : 'not',
+    renewal: $('#wrapRenewal').hidden ? 'tidak' : F.renewal.value,
     createdAt: old ? old.createdAt : Date.now()
   };
   if (old) orders[orders.indexOf(old)] = rec; else orders.unshift(rec);
@@ -1471,6 +1523,7 @@ function exportRows(withPass) {
       'Nama Aplikasi': o.app,
       'Jenis': o.type,
       'Durasi': durLabel(o),
+      'Butuh Renewal': o.renewal === 'ya' ? 'Ya' : 'Tidak',
       'Tanggal Order': o.orderDate,
       'Jatuh Tempo': toISO(s.due),
       'Sisa Hari': s.left,
@@ -1493,7 +1546,7 @@ function exportRows(withPass) {
 function doExport() {
   const rows = exportRows($('#exPass').checked);
   if (!rows.length) { toast('Tidak ada data untuk diexport'); return; }
-  const stamp = toISO(new Date()).replace(/-/g, '');
+  const stamp = (settings.month === 'all' ? 'semua-bulan-' : settings.month + '-') + toISO(new Date()).replace(/-/g, '');
   const total = {};
   Object.keys(rows[0]).forEach(k => { total[k] = ''; });
   total['Nama Aplikasi'] = 'TOTAL';
@@ -1512,7 +1565,7 @@ function doExport() {
   // Cadangan bila library Excel gagal dimuat: CSV dengan pemisah titik koma (cocok untuk Excel Indonesia)
   const cols = Object.keys(all[0]);
   const cell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const csv = '﻿' + [cols.map(cell).join(';')].concat(all.map(r => cols.map(c => cell(r[c])).join(';'))).join('\r\n');
+  const csv = '\uFEFF' + [cols.map(cell).join(';')].concat(all.map(r => cols.map(c => cell(r[c])).join(';'))).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   a.download = 'rekap-order-' + stamp + '.csv';
@@ -1543,6 +1596,7 @@ function sheetPayload() {
     monthDays: o.monthDays, customDays: o.customDays, orderDate: o.orderDate, customer: o.customer,
     waBuyer: o.waBuyer, waBuyerNorm: waNum(o.waBuyer), price: o.price, cost: o.cost,
     email: o.email, admin: o.admin, waAdmin: o.waAdmin, waAdminNorm: waNum(o.waAdmin),
+    renewal: o.renewal || 'tidak',
     proofs: (o.proofs || []).map(p => ({ name: p.name, url: p.url || '', drive: !!p.drive })),
     createdAt: o.createdAt
   }));
@@ -1589,6 +1643,7 @@ async function pullFromSheet(auto) {
       const keepProofs = l && l.proofs && l.proofs.length;
       return Object.assign({}, r, {
         password: l ? l.password : '',
+        renewal: r.renewal || (l && l.renewal) || 'tidak',
         proofs: keepProofs ? l.proofs : (r.proofs || []).map(p => Object.assign({ thumb: '' }, p))
       });
     });
@@ -1734,6 +1789,7 @@ function bindMain() {
   $('#setOverlay').addEventListener('mousedown', e => { if (e.target.id === 'setOverlay') closeSettings(); });
   $('#q').addEventListener('input', e => { settings.q = e.target.value; renderGrid(); });
   $('#sort').addEventListener('change', e => { settings.sort = e.target.value; renderGrid(); });
+  $('#monthSel').addEventListener('change', e => { settings.month = e.target.value; renderStats(); renderChips(); renderGrid(); });
   $('#warnDays').addEventListener('change', e => { settings.warnDays = parseInt(e.target.value, 10); save(); renderAll(); });
   $('#chips').addEventListener('click', e => {
     const b = e.target.closest('[data-filter]');
